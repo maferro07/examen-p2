@@ -28,9 +28,9 @@ Finalmente, la información obtenida se almacena en PostgreSQL y se consulta med
 
 - **Python:** generación y procesamiento de datos.
 - **Hadoop MapReduce:** procesamiento de grandes cantidades de información.
-- **Docker:** ejecución de los servicios en contenedores.
+- **Docker:** ejecución de servicios en contenedores.
 - **Docker Compose:** administración de los contenedores.
-- **PostgreSQL:** almacenamiento de los resultados.
+- **PostgreSQL:** almacenamiento de resultados.
 - **Flask:** desarrollo de la API.
 - **SSH:** comunicación segura entre contenedores.
 - **GitHub:** almacenamiento y documentación del proyecto.
@@ -82,7 +82,7 @@ examen-p2/
     └── github_archivos.png
 ```
 
-**Nota:** El archivo CSV no se incluye en GitHub debido a su tamaño. Se genera localmente utilizando `generar_dataset.py`.
+**Nota:** El archivo CSV no se sube a GitHub debido a su tamaño. Se genera localmente utilizando `generar_dataset.py`.
 
 ---
 
@@ -90,7 +90,7 @@ examen-p2/
 
 ### 4.1 Generación del dataset
 
-Se utilizó Python para generar aproximadamente 5 millones de registros de ventas.
+Se utilizó Python para generar aproximadamente **5 millones de registros de ventas**.
 
 Cada registro contiene información como:
 
@@ -110,7 +110,7 @@ El dataset se genera utilizando la matrícula como semilla para obtener datos re
 python3 generar_dataset.py 125053905
 ```
 
-El archivo generado se coloca en la carpeta `data/`.
+El archivo generado debe colocarse en la carpeta `data/`.
 
 ### 4.2 Creación de contenedores
 
@@ -171,7 +171,7 @@ docker compose exec hadoop bash -c 'hadoop jar /opt/hadoop/share/hadoop/tools/li
 
 El procesamiento genera los resultados agrupados por método de pago y día de la semana.
 
-Se obtienen **28 combinaciones**, correspondientes a cuatro métodos de pago y siete días de la semana.
+Se obtuvieron **28 combinaciones**, correspondientes a cuatro métodos de pago y siete días de la semana.
 
 ### 4.6 Procesamiento secuencial
 
@@ -258,7 +258,7 @@ docker compose exec hadoop bash -c 'hadoop jar /opt/hadoop/share/hadoop/tools/li
 -reducer "python3 /opt/mapreduce/reducer.py"'
 ```
 
-**Importante:** Si la carpeta `/data/output/resultado` ya existe, es necesario retirarla o utilizar otra ruta de salida antes de repetir el procesamiento.
+**Importante:** Hadoop no permite utilizar una carpeta de salida que ya existe. Si `/data/output/resultado` ya existe, es necesario utilizar otra ruta o retirar la salida anterior antes de repetir el procesamiento.
 
 ### Paso 8. Consultar los resultados
 
@@ -291,7 +291,7 @@ Se realizaron dos pruebas utilizando el mismo conjunto de datos.
 | Método | Tiempo de ejecución |
 |---|---:|
 | Hadoop MapReduce | 151.41 segundos |
-| Python secuencial | 125.45 segundos |
+| Python secuencial | 146.48 segundos |
 
 ### Análisis de los resultados
 
@@ -303,11 +303,17 @@ Como el procesamiento se realizó en una sola computadora, Hadoop no pudo aprove
 
 Sin embargo, Hadoop es útil cuando se procesan cantidades mucho mayores de información y se dispone de varias computadoras para trabajar en paralelo.
 
-### Resultados obtenidos
+### Comprobación de resultados
 
-Ambos programas se diseñaron para responder la misma pregunta de negocio.
+Se comprobó mediante el comando `diff` que los **28 resultados generados por Hadoop MapReduce y Python secuencial coinciden exactamente**.
 
-El procesamiento genera 28 combinaciones de métodos de pago y días de la semana.
+Para realizar la comparación se utilizó:
+
+```bash
+diff <(sort evidencias/resultado_hadoop.txt) <(grep -v '^Tiempo secuencial:' evidencias/resultado_secuencial.txt | sed '/^$/d' | sort)
+```
+
+El comando no mostró diferencias, lo que confirma que ambos métodos obtuvieron los mismos valores.
 
 Los resultados se encuentran en:
 
