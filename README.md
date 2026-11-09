@@ -78,8 +78,6 @@ examen-p2/
     ├── evidencias-persistencia_postgresql.png
     ├── resultado_hadoop.txt
     ├── resultado_secuencial.txt
-    ├── github_repositorio.png
-    └── github_archivos.png
 ```
 
 **Nota:** El archivo CSV no se sube a GitHub debido a su tamaño. Se genera localmente utilizando `generar_dataset.py`.
