@@ -1,0 +1,62 @@
+services:
+
+  hadoop:
+    build:
+      context: ./hadoop
+    container_name: examen_hadoop
+    volumes:
+      - ./data:/data/input:ro
+      - ./mapreduce:/opt/mapreduce:ro
+      - ssh_hadoop:/root/.ssh
+    networks:
+      - red_examen
+
+  db:
+    image: postgres:16-alpine
+    container_name: examen_db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data
+    networks:
+      - red_examen
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+    container_name: examen_api
+    ports:
+      - "5050:5000"
+    volumes:
+      - ssh_api:/root/.ssh
+      - ./scripts:/app/scripts:ro
+      - ./evidencias/resultado_hadoop.txt:/app/resultado_hadoop.txt:ro
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red_examen
+
+networks:
+  red_examen:
+    driver: bridge
+
+volumes:
+  datos_postgres:
+  ssh_hadoop:
+  ssh_api:
