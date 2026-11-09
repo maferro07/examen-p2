@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 
 CMD ["python", "app.py"]
-
+docker compose up -d --build api
 COPY iniciar.sh /app/iniciar.sh
 
 RUN chmod +x /app/iniciar.sh

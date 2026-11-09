@@ -1,108 +1,427 @@
-# Examen P2 — Procesamiento de ventas con Hadoop
+# Examen Segundo Parcial — Pipeline de Datos Contenerizado
 
-## 1. Descripción del proyecto
+## 1. Datos generales
 
-Este proyecto tiene como objetivo analizar un conjunto de datos de 5 millones de registros de ventas utilizando Hadoop MapReduce.
+**Matrícula:** 125053905
 
-El análisis responde a la siguiente pregunta:
+**Materia:** Manejo Masivo de Datos (Big Data)
 
-**¿Cuántas unidades se vendieron por método de pago y día de la semana?**
+**Proyecto:** Procesamiento de ventas con Hadoop MapReduce, PostgreSQL y Flask.
 
-Los resultados se almacenan en PostgreSQL y se pueden consultar mediante una API desarrollada con Flask.
+**Pregunta asignada:**
 
-## 2. Tecnologías utilizadas
+¿Cuántas unidades se vendieron por método de pago y día de la semana?
+
+---
+
+## 2. Descripción del proyecto
+
+El objetivo de este proyecto es analizar un conjunto de datos de aproximadamente **5 millones de registros de ventas** utilizando Hadoop MapReduce.
+
+Se busca conocer cuántas unidades se vendieron según el método de pago utilizado y el día de la semana.
+
+Para comprobar los resultados, también se realiza el mismo análisis utilizando Python secuencial.
+
+Finalmente, la información obtenida se almacena en PostgreSQL y se consulta mediante una API desarrollada con Flask.
+
+### Tecnologías utilizadas
 
 - **Python:** generación y procesamiento de datos.
 - **Hadoop MapReduce:** procesamiento de grandes cantidades de información.
-- **PostgreSQL:** almacenamiento de resultados.
-- **Flask:** creación de la API.
+- **Docker:** ejecución de los servicios en contenedores.
 - **Docker Compose:** administración de los contenedores.
+- **PostgreSQL:** almacenamiento de los resultados.
+- **Flask:** desarrollo de la API.
+- **SSH:** comunicación segura entre contenedores.
+- **GitHub:** almacenamiento y documentación del proyecto.
 
-## 3. Funcionamiento del proyecto
+---
 
-El proyecto se desarrolla en cinco etapas:
+## 3. Estructura del proyecto
 
-1. Generar un dataset de 5 millones de ventas.
-2. Procesar los registros mediante Hadoop MapReduce.
-3. Realizar el mismo análisis con Python secuencial.
-4. Guardar los resultados en PostgreSQL.
-5. Consultar la información mediante una API Flask.
+```text
+examen-p2/
+│
+├── README.md
+├── .gitignore
+├── .env.example
+├── docker-compose.yml
+├── generar_dataset.py
+│
+├── data/
+│   └── ventas_125053905.csv
+│
+├── hadoop/
+│   └── Dockerfile
+│
+├── mapreduce/
+│   ├── mapper.py
+│   ├── reducer.py
+│   └── secuencial.py
+│
+├── api/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── app.py
+│   └── iniciar.sh
+│
+├── scripts/
+│   └── cargar_resultados.py
+│
+└── evidencias/
+    ├── hadoop_version.png
+    ├── ssh_localhost.png
+    ├── ssh_api_hadoop.png
+    ├── mapreduce_resultados.png
+    ├── job_hadoop.png
+    ├── respuesta_api.png
+    ├── evidencias-persistencia_postgresql.png
+    ├── resultado_hadoop.txt
+    ├── resultado_secuencial.txt
+    ├── github_repositorio.png
+    └── github_archivos.png
+```
 
-## 4. Resultados obtenidos
+**Nota:** El archivo CSV no se incluye en GitHub debido a su tamaño. Se genera localmente utilizando `generar_dataset.py`.
 
-El procesamiento generó 28 combinaciones de métodos de pago y días de la semana.
+---
 
-Los tiempos registrados fueron:
+## 4. Desarrollo del proyecto
 
-| Procesamiento | Tiempo |
-|---|---|
-| Hadoop MapReduce | 151.41 segundos |
-| Python secuencial | 125.45 segundos |
+### 4.1 Generación del dataset
 
-Ambos métodos produjeron los mismos resultados.
+Se utilizó Python para generar aproximadamente 5 millones de registros de ventas.
 
-En esta ejecución, Python secuencial fue más rápido porque Hadoop se utilizó en un entorno local.
+Cada registro contiene información como:
 
-## 5. API
+- Fecha y hora.
+- Tienda.
+- Categoría.
+- Producto.
+- Cantidad vendida.
+- Precio unitario.
+- Método de pago.
 
-La API permite consultar los resultados almacenados en PostgreSQL.
+El dataset se genera utilizando la matrícula como semilla para obtener datos reproducibles.
 
-**Consultar todos los resultados:**
+**Comando:**
 
-`http://localhost:5050/resultados`
+```bash
+python3 generar_dataset.py 125053905
+```
 
-**Consultar los resultados de un método de pago:**
+El archivo generado se coloca en la carpeta `data/`.
 
-`http://localhost:5050/resultados/Tarjeta`
+### 4.2 Creación de contenedores
 
-**Comprobar el funcionamiento de la API:**
+Se utilizó Docker Compose para organizar tres servicios:
 
-`http://localhost:5050/salud`
+**Hadoop:** procesa el archivo CSV mediante MapReduce.
 
-## 6. Evidencias
+**PostgreSQL:** almacena los resultados del análisis.
 
-La carpeta `evidencias` contiene los resultados obtenidos durante el procesamiento de los datos.
+**API Flask:** permite consultar y agregar información a la base de datos.
 
-Estos archivos permiten comparar los resultados de Hadoop MapReduce y Python secuencial.
+Los servicios se comunican mediante una red de Docker.
 
-## 7. Instrucciones de ejecución
+### 4.3 Configuración de Hadoop
 
-### Requisitos
+Se creó un Dockerfile basado en Debian para instalar Java, Python y Hadoop.
 
-Para ejecutar el proyecto es necesario tener instalados:
+Se configuraron las variables de entorno necesarias para ejecutar Hadoop.
 
-- Docker
-- Docker Compose
-- Git
+Para comprobar su instalación se utilizó:
 
-### Descargar el proyecto
+```bash
+hadoop version
+```
+
+La versión utilizada fue **Hadoop 3.3.6**.
+
+### 4.4 Configuración de SSH
+
+Se configuró SSH mediante llaves para permitir conexiones sin contraseña.
+
+Se realizaron dos comprobaciones:
+
+1. Conexión SSH dentro del contenedor Hadoop mediante `localhost`.
+2. Conexión SSH hacia Hadoop utilizando su nombre de servicio.
+
+Esto permite comprobar la comunicación entre los servicios.
+
+### 4.5 Procesamiento con MapReduce
+
+Se desarrollaron dos programas en Python:
+
+**mapper.py:** lee los registros y obtiene el método de pago, el día de la semana y la cantidad vendida.
+
+**reducer.py:** agrupa los registros y suma las unidades vendidas para cada combinación.
+
+Se utilizó Hadoop Streaming para ejecutar ambos programas.
+
+**Comando utilizado:**
+
+```bash
+docker compose exec hadoop bash -c 'hadoop jar /opt/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.6.jar \
+-input /data/input/ventas_125053905.csv \
+-output /data/output/resultado \
+-mapper "python3 /opt/mapreduce/mapper.py" \
+-reducer "python3 /opt/mapreduce/reducer.py"'
+```
+
+El procesamiento genera los resultados agrupados por método de pago y día de la semana.
+
+Se obtienen **28 combinaciones**, correspondientes a cuatro métodos de pago y siete días de la semana.
+
+### 4.6 Procesamiento secuencial
+
+Se desarrolló `secuencial.py` para resolver la misma pregunta utilizando Python, sin Hadoop.
+
+El programa lee el dataset y calcula las unidades vendidas por método de pago y día de la semana.
+
+Este procedimiento permite comparar el rendimiento de ambos métodos.
+
+### 4.7 Almacenamiento en PostgreSQL
+
+Se utilizó PostgreSQL para almacenar los resultados obtenidos mediante MapReduce.
+
+El script `cargar_resultados.py` permite insertar los registros procesados en la base de datos.
+
+Se almacenaron **28 registros**, correspondientes a las combinaciones de métodos de pago y días de la semana.
+
+### 4.8 Desarrollo de la API
+
+Se desarrolló una API utilizando Flask para consultar los resultados almacenados.
+
+Los endpoints implementados son:
+
+| Método | Endpoint | Función |
+|---|---|---|
+| GET | `/resultados` | Consultar todos los resultados. |
+| GET | `/resultados/Tarjeta` | Consultar resultados del método de pago Tarjeta. |
+| POST | `/resultados` | Agregar un registro. |
+| GET | `/salud` | Comprobar el funcionamiento de la API. |
+
+La API utiliza el puerto **5050**.
+
+---
+
+## 5. Instrucciones para ejecutar el proyecto
+
+### Paso 1. Descargar el repositorio
 
 Clonar el repositorio desde GitHub y entrar a la carpeta del proyecto.
 
-### Configurar las variables de entorno
+### Paso 2. Configurar las variables de entorno
 
-Crear el archivo `.env` utilizando como referencia `.env.example` y configurar las credenciales de PostgreSQL.
+Crear el archivo `.env` a partir de `.env.example`.
 
-### Iniciar los contenedores
+```bash
+cp .env.example .env
+```
 
-Desde la carpeta principal del proyecto, ejecutar:
+Completar las variables necesarias para la conexión con PostgreSQL.
+
+### Paso 3. Generar el dataset
+
+```bash
+python3 generar_dataset.py 125053905
+```
+
+Colocar el CSV generado dentro de la carpeta `data/`.
+
+### Paso 4. Construir e iniciar los contenedores
 
 ```bash
 docker compose up -d --build
 ```
 
-Este comando construye las imágenes necesarias e inicia los servicios de Hadoop, PostgreSQL y Flask.
+### Paso 5. Comprobar los contenedores
 
-### Consultar la API
+```bash
+docker compose ps
+```
 
-Una vez que los servicios estén funcionando y los resultados se hayan cargado correctamente, abrir:
+### Paso 6. Verificar Hadoop
 
-`http://localhost:5050/resultados`
+```bash
+docker compose exec hadoop hadoop version
+```
 
-La API mostrará las unidades vendidas por método de pago y día de la semana.
+### Paso 7. Ejecutar MapReduce
 
-### Nota importante
+```bash
+docker compose exec hadoop bash -c 'hadoop jar /opt/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.6.jar \
+-input /data/input/ventas_125053905.csv \
+-output /data/output/resultado \
+-mapper "python3 /opt/mapreduce/mapper.py" \
+-reducer "python3 /opt/mapreduce/reducer.py"'
+```
 
-El dataset original no está incluido en GitHub debido a su tamaño. Se proporciona el archivo `generar_dataset.py` para generarlo.
+**Importante:** Si la carpeta `/data/output/resultado` ya existe, es necesario retirarla o utilizar otra ruta de salida antes de repetir el procesamiento.
 
-El procesamiento con Hadoop debe ejecutarse antes de cargar sus resultados en una instalación nueva. Las instrucciones completas para realizar este proceso están pendientes de documentarse.
+### Paso 8. Consultar los resultados
+
+```bash
+docker compose exec hadoop cat /data/output/resultado/part-00000
+```
+
+### Paso 9. Consultar la API
+
+Abrir en el navegador:
+
+```text
+http://localhost:5050/resultados
+```
+
+Para consultar los resultados de pagos con tarjeta:
+
+```text
+http://localhost:5050/resultados/Tarjeta
+```
+
+**Nota:** La carga inicial de resultados en PostgreSQL depende de la configuración del servicio API y del script `cargar_resultados.py`.
+
+---
+
+## 6. Comparación de rendimiento
+
+Se realizaron dos pruebas utilizando el mismo conjunto de datos.
+
+| Método | Tiempo de ejecución |
+|---|---:|
+| Hadoop MapReduce | 151.41 segundos |
+| Python secuencial | 125.45 segundos |
+
+### Análisis de los resultados
+
+En esta práctica, Python secuencial fue más rápido que Hadoop MapReduce.
+
+Esto se debe a que Hadoop necesita tiempo adicional para iniciar y organizar sus tareas.
+
+Como el procesamiento se realizó en una sola computadora, Hadoop no pudo aprovechar las ventajas de distribuir el trabajo entre varios equipos.
+
+Sin embargo, Hadoop es útil cuando se procesan cantidades mucho mayores de información y se dispone de varias computadoras para trabajar en paralelo.
+
+### Resultados obtenidos
+
+Ambos programas se diseñaron para responder la misma pregunta de negocio.
+
+El procesamiento genera 28 combinaciones de métodos de pago y días de la semana.
+
+Los resultados se encuentran en:
+
+- `evidencias/resultado_hadoop.txt`
+- `evidencias/resultado_secuencial.txt`
+
+---
+
+## 7. Evidencias del funcionamiento
+
+### 7.1 Versión de Hadoop
+
+Se comprobó la instalación de Hadoop 3.3.6.
+
+![Versión de Hadoop](evidencias/hadoop_version.png)
+
+### 7.2 Conexión SSH local
+
+Se verificó la conexión SSH sin contraseña dentro del contenedor Hadoop.
+
+![SSH localhost](evidencias/ssh_localhost.png)
+
+### 7.3 Conexión SSH entre contenedores
+
+Se comprobó la conexión SSH utilizando el nombre del servicio Hadoop.
+
+![SSH entre contenedores](evidencias/ssh_api_hadoop.png)
+
+### 7.4 Ejecución del job de Hadoop
+
+Se ejecutó el procesamiento MapReduce utilizando Hadoop Streaming.
+
+![Ejecución del job](evidencias/job_hadoop.png)
+
+### 7.5 Resultados de MapReduce
+
+Se obtuvieron los resultados agrupados por método de pago y día de la semana.
+
+![Resultados de MapReduce](evidencias/mapreduce_resultados.png)
+
+### 7.6 Funcionamiento de la API
+
+Se comprobaron las consultas GET y el registro de información mediante POST.
+
+![Respuesta de la API](evidencias/respuesta_api.png)
+
+### 7.7 Persistencia de PostgreSQL
+
+Se detuvieron y volvieron a iniciar los contenedores para comprobar que los datos permanecieran almacenados.
+
+La base de datos conservó los **28 registros**.
+
+![Persistencia de PostgreSQL](evidencias/evidencias-persistencia_postgresql.png)
+
+---
+
+## 8. Preguntas teóricas
+
+### 1. Explica la diferencia entre los modos standalone, pseudo-distribuido y totalmente distribuido de Hadoop. ¿En cuál de ellos se usa HDFS?
+
+**Standalone:** Hadoop funciona en una sola computadora, sin utilizar HDFS.
+
+**Pseudo-distribuido:** funciona en una sola computadora, pero simula varios servicios de Hadoop y utiliza HDFS.
+
+**Totalmente distribuido:** utiliza varias computadoras conectadas para procesar y almacenar grandes cantidades de datos mediante HDFS.
+
+### 2. ¿Por qué el dataset se monta como volumen y no se copia dentro de la imagen con COPY? Menciona al menos dos razones.
+
+Porque el dataset es muy grande y copiarlo aumentaría el tamaño de la imagen Docker.
+
+Además, al utilizar un volumen podemos modificar o reemplazar los datos sin reconstruir la imagen.
+
+Esto facilita el manejo de archivos y ahorra espacio.
+
+### 3. ¿Qué ocurre con los datos de la base de datos al ejecutar docker compose down? ¿Y con docker compose down -v?
+
+El comando `docker compose down` elimina los contenedores, pero conserva los datos almacenados en volúmenes nombrados.
+
+En cambio, `docker compose down -v` también elimina esos volúmenes, por lo que se pierden los datos guardados en ellos.
+
+### 4. ¿Por qué MapReduce no siempre es más rápido que un script secuencial con un archivo de 400 MB? ¿A partir de qué condiciones conviene?
+
+Porque Hadoop necesita tiempo adicional para iniciar y organizar las tareas.
+
+Con archivos relativamente pequeños, Python secuencial puede ser más rápido.
+
+MapReduce conviene cuando se procesan cantidades mucho mayores de información y el trabajo puede distribuirse entre varias computadoras.
+
+### 5. Diferencia entre CMD y ENTRYPOINT, y entre COPY y ADD.
+
+**CMD:** establece el comando predeterminado del contenedor y puede reemplazarse fácilmente.
+
+**ENTRYPOINT:** define el programa principal que ejecutará el contenedor.
+
+**COPY:** copia archivos y carpetas a la imagen Docker.
+
+**ADD:** también copia archivos, pero permite funciones adicionales, como extraer archivos comprimidos locales.
+
+---
+
+## 9. Evidencias de GitHub
+
+El proyecto se publica en GitHub para facilitar su consulta y reproducción.
+
+### 9.1 Repositorio en GitHub
+
+Captura de la página principal del repositorio.
+
+![Repositorio en GitHub](evidencias/github_repositorio.png)
+
+### 9.2 Archivos publicados
+
+Captura de los archivos y carpetas del proyecto en GitHub.
+
+![Archivos del proyecto](evidencias/github_archivos.png)
+
+---
